@@ -1,95 +1,199 @@
 import pygame
 import sys
-
-import pygame
-import sys
-
-# Importações da Camada de Domínio (Models)
+import random
+from config import *
 from models.player import Player
-from models.dice import Dice
-from models.board_model import BoardModel
-from models.turn_manager import TurnManager
-from models.bet_processor import BetProcessor
-
-# Importações da Camada de Apresentação (Views)
-from views.board_view import CompleteBoardView
-from views.ui_view import GameMessageView, ScoreBoardView, BetInputView
-from views.input_handler import InputHandler
-
-# Importações de Componentes do Controller
-from controllers.bet_input_manager import BetInputManager
-from controllers.scene_renderer import SceneRenderer
-
-# Importação do Estado Inicial (Pattern State)
-from states.game_states import StartState
+from models.scene import Scene
+from controllers.bets_controller import BetsController
+from controllers.restart_controller import RestartController
 
 class GameController:
-    def __init__(self):
-        pygame.init()
-        self.width, self.height = 1280, 720
-        self.screen = pygame.display.set_mode((self.width, self.height))
-        pygame.display.set_caption("Probabilidado")
+    def __init__(self, screen):
+        self.screen = screen
+        self.scene = Scene(600 // 7)
+        self.players = []
+        self.current_player = 0
+        self.current_round = 1
+        self.game_message = "Seja bem vindo ao Probabilidado!"
+        self.game_started = False
+        self.tie = False
+        self.dice1 = 0
+        self.dice2 = 0
+        self.game_over = False
+        try:
+            self.sound_dice = pygame.mixer.Sound('assets/sounds/dice.wav')
+            self.sound_win = pygame.mixer.Sound('assets/sounds/win.wav')
+            self.sound_loss = pygame.mixer.Sound('assets/sounds/loss.wav')
+            self.sound_dice.set_volume(0.5) 
+            self.sound_win.set_volume(0.7)
+            self.sound_loss.set_volume(0.7)
+        except FileNotFoundError:
+            print("Aviso: Arquivos de som não encontrados na pasta assets/sounds/")
+            self.sound_dice = None
+            self.sound_win = None
+            self.sound_loss = None
         
-        self.is_running = True
+        # Injeta o próprio GameController no BetsController
+        self.bets_controller = BetsController(self)
+
+    def roll_dice(self):
+        self.dice1 = random.randint(1, 6)
+        self.dice2 = random.randint(1, 6)
         
-        # Inicializa o core do jogo
-        self._initialize_dependencies()
+        if self.sound_dice:
+            self.sound_dice.play()
+        # print(f"Dados lançados: ({self.dice1}, {self.dice2})")
+
+    def iniciar_jogo(self):
+        names = self.request_names()
+        self.players = [Player(names[0]), Player(names[1])]
+        self.roll_dice()
+
+    def process_current_bet(self, mouse_position):
+        valid_bet = self.bets_controller.process_bet(mouse_position)
+        if valid_bet:
+            self.check_game_over()
+            if not self.game_over:
+                self.switch_shifts()
+
+    def switch_shifts(self):
+        self.current_player = 1 if self.current_player == 0 else 0
+        self.roll_dice()
+
+    def request_names(self):
+        names = []
+        font = pygame.font.SysFont(None, 48)
+        input_rect = pygame.Rect(WIDTH // 2 - 200, HEIGHT // 2 - 25, 400, 50)
         
-        # Define o estado inicial da máquina de estados
-        self.current_state = StartState(self)
+        for i in range(2):
+            name = ""
+            while True:
+                self.screen.fill(BG_COLOR)
+                text_surface = font.render(f"Insira o nome do jogador {i + 1}:", True, BLACK)
+                self.screen.blit(text_surface, (WIDTH // 2 - text_surface.get_width() // 2, HEIGHT // 2 - 100))
+                pygame.draw.rect(self.screen, BLACK, input_rect, 2)
+                
+                text_color = BLUE if i == 0 else RED
+                input_surface = font.render(name, True, text_color)
+                self.screen.blit(input_surface, (input_rect.x + 10, input_rect.y + 10))
+                pygame.display.flip()
 
-    def _initialize_dependencies(self):
-        # Agrupa a instanciação de Models, Views e Managers
-        self.players = [Player("Jogador 1"), Player("Jogador 2")]
-        self.board_model = BoardModel()
-        self.dice = Dice()
-        self.turn_manager = TurnManager(self.players, max_rounds=5)
-        self.bet_processor = BetProcessor(self.board_model, self.dice)
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        sys.exit()
+                    elif event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_RETURN:
+                            names.append(name.strip() or f"Jogador {i + 1}")
+                            break
+                        elif event.key == pygame.K_BACKSPACE:
+                            name = name[:-1]
+                        else:
+                            if len(name) < 12:
+                                name += event.unicode
+                else:
+                    continue
+                break
+        return names
+
+    def design_interface(self):
+        self.scene.paint_board(self.screen)
         
-        cell_size = 600 // 7
-        self.input_handler = InputHandler(cell_size)
-        self.bet_manager = BetInputManager(self.bet_processor, self.turn_manager, self.input_handler)
+        # --- DESENHA O PAINEL LATERAL (DASHBOARD) ---
+        painel_rect = pygame.Rect(860, 50, 400, HEIGHT - 100)
+        pygame.draw.rect(self.screen, SHADOW, (painel_rect.x + 8, painel_rect.y + 8, painel_rect.width, painel_rect.height), border_radius=20)
+        pygame.draw.rect(self.screen, WHITE, painel_rect, border_radius=20)
         
-        # Inicializa as Views
-        board_view = CompleteBoardView(cell_size)
-        score_view = ScoreBoardView(self.height)
-        message_view = GameMessageView(self.width, self.height)
-        bet_input_view = BetInputView(self.width, self.height)
-        self.scene_renderer = SceneRenderer(
-            self.width, self.height, board_view, score_view, message_view, bet_input_view
-        )
+        # Renderiza os componentes internos alinhados a este painel
+        self.show_player_turn()
+        self.show_message()
+        self.show_bet_location()
+        self.show_info_player()
 
-    def change_state(self, new_state):
-        # Altera o estado atual (ex: de StartState para PlayingState)
-        self.current_state = new_state
+    def show_player_turn(self):
+        font = pygame.font.SysFont('segoeui', 36, bold=True)
+        player = self.players[self.current_player]
+        color = BLUE if self.current_player == 0 else RED
+        
+        title = font.render("TURNO ATUAL", True, TEXT_COLOR)
+        name = font.render(player.name, True, color)
+        
+        # Centralizado no topo do painel lateral
+        self.screen.blit(title, (1060 - title.get_width()//2, 80))
+        self.screen.blit(name, (1060 - name.get_width()//2, 120))
 
-    def reset_game(self):
-        # Recria as instâncias para uma nova partida
-        self._initialize_dependencies()
+    def show_message(self):
+        # Quebra a mensagem se for muito longa para caber no painel
+        font = pygame.font.SysFont('segoeui', 24)
+        text_surface = font.render(self.game_message, True, (100, 116, 139)) # Cinza médio
+        
+        # Centralizado abaixo de quem é a vez
+        self.screen.blit(text_surface, (1060 - text_surface.get_width()//2, 180))
 
-    def handle_events(self):
-        # O Controller apenas intercepta o botão de fechar a janela
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                self.is_running = False
-            else:
-                # Delega qualquer outro evento para o estado atual resolver
-                self.current_state.handle_event(event)
+    def show_bet_location(self):
+        font = pygame.font.SysFont('segoeui', 26, bold=True)
+        text_surface = font.render("VALOR DA APOSTA:", True, TEXT_COLOR)
+        
+        self.screen.blit(text_surface, (940, 310))
 
-    def render(self):
-        # Delega a renderização para o estado atual e atualiza a tela
-        self.current_state.render(self.screen)
-        pygame.display.flip()
-
-    def run(self):
-        # O laço principal fica o mais limpo possível
-        while self.is_running:
-            self.handle_events()
-            self.render()
+    def show_info_player(self):
+        # Transforma o placar em "Cartões" na parte de baixo do painel
+        y_base = 450
+        
+        for idx, player in enumerate(self.players):
+            theme_color = BLUE if idx == 0 else RED
+            card_rect = pygame.Rect(910, y_base + (idx * 80), 300, 60)
             
-        pygame.quit()
-        sys.exit()
+            # Fundo suave do cartão
+            bg_color = (239, 246, 255) if idx == 0 else (254, 242, 242)
+            pygame.draw.rect(self.screen, bg_color, card_rect, border_radius=10)
+            pygame.draw.rect(self.screen, theme_color, card_rect, 2, border_radius=10)
+            
+            # textos dentro do cartão
+            font_name = pygame.font.SysFont('segoeui', 28, bold=True)
+            font_chips = pygame.font.SysFont('segoeui', 28)
+            
+            text_name = font_name.render(player.name, True, theme_color)
+            text_chips = font_chips.render(f"{player.chips} chips", True, TEXT_COLOR)
+            
+            self.screen.blit(text_name, (card_rect.x + 15, card_rect.y + 15))
+            self.screen.blit(text_chips, (card_rect.right - text_chips.get_width() - 15, card_rect.y + 15))
+        
+    def check_game_over(self):
+        j1, j2 = self.players[0], self.players[1]
+        
+        # Regra 2: Morte súbita se alguém zerar as fichas
+        if j1.chips <= 0 or j2.chips <= 0:
+            self.game_over = True
+            self.tie = False
+            return
 
-if __name__ == "__main__":
-    game = GameController()
-    game.run()
+        # Regra 1: Fim ao término das rodadas configuradas
+        if j1.number_rounds >= number_rounds and j2.number_rounds >= number_rounds:
+            self.game_over = True
+            self.tie = (j1.chips == j2.chips)
+
+    def show_winner(self):
+        font = pygame.font.SysFont(None, 60)
+        
+        if self.tie:
+            text = f"Empate! Ambos terminaram com {self.players[0].chips} fichas."
+        else:
+            # Descobre quem tem mais fichas
+            winner = self.players[0] if self.players[0].chips > self.players[1].chips else self.players[1]
+            loser = self.players[1] if winner == self.players[0] else self.players[0]
+            
+            # Mensagem customizada caso o derrotado tenha zerado as fichas
+            if loser.chips <= 0:
+                text = f"{winner.name} venceu! {loser.name} faliu."
+            else:
+                text = f"Parabéns, {winner.name}! Venceu com {winner.chips} fichas!"
+                
+        text_winner = font.render(text, True, BLACK)
+        self.screen.blit(text_winner, (WIDTH // 2 - text_winner.get_width() // 2, HEIGHT // 2 - 50))
+
+        font_options = pygame.font.SysFont(None, 40)
+        option_reiniciar = font_options.render("Pressione R para jogar novamente", True, GREEN)
+        option_sair = font_options.render("Pressione S para sair", True, RED)
+        self.screen.blit(option_reiniciar, (WIDTH // 2 - option_reiniciar.get_width() // 2, HEIGHT // 2 + 50))
+        self.screen.blit(option_sair, (WIDTH // 2 - option_sair.get_width() // 2, HEIGHT // 2 + 100))
