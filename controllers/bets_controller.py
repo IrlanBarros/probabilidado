@@ -23,7 +23,7 @@ class BetsController:
         print(f"número de chips: {player.chips}")
 
         if player.chips < bet or bet <= 0:
-            self.game.game_message = f"{player.nome} não tem {bet} fichas para apostar."
+            self.game.game_message = f"{player.name} não tem {bet} fichas para apostar."
             return False
 
         if house_board == 4:
@@ -62,7 +62,7 @@ class BetsController:
         else:
             if self.game.sound_loss:
                 self.game.sound_loss.play()
-            self.game.game_message = f"Errou! Aposta no quadrante {line + 1}.\n Dados: ({d1}, {d2})"
+            self.game.game_message = f"Errou! Aposta no quadrante {line + 1}. Dados: ({d1}, {d2})"
 
     def color_bet(self, house, color, bet):
         player = self.game.players[self.game.current_player]
@@ -88,7 +88,7 @@ class BetsController:
         else:
             if self.game.sound_loss:
                 self.game.sound_loss.play()
-            self.game.game_message = f"Errou! Aposta na cor {color}.\n Dados: ({self.game.dice1}, {self.game.dice2})"
+            self.game.game_message = f"Errou! Aposta na cor {color}. Dados: ({self.game.dice1}, {self.game.dice2})"
 
     def by_order_bet(self, house_position, bet):
         player = self.game.players[self.game.current_player]
@@ -103,4 +103,4 @@ class BetsController:
         else:
             if self.game.sound_loss:
                 self.game.sound_loss.play()
-            self.game.game_message = f"Errou! Aposta em par ordenado.\n Dados: ({self.game.dice1}, {self.game.dice2})"
+            self.game.game_message = f"Errou! Aposta em par ordenado. Dados: ({self.game.dice1}, {self.game.dice2})"
