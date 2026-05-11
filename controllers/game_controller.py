@@ -1,6 +1,8 @@
 import pygame
 import sys
 import random
+import datetime
+import os
 from config import *
 from models.player import Player
 from models.scene import Scene
@@ -32,6 +34,13 @@ class GameController:
             self.sound_dice = None
             self.sound_win = None
             self.sound_loss = None
+            
+        try:
+            pygame.mixer.music.load('assets/music/background.ogg')
+            pygame.mixer.music.set_volume(0.1) # Som em volume ambiente
+            pygame.mixer.music.play(-1) # loop infinito
+        except Exception:
+            print("Aviso: Arquivo de música não encontrado.")
         
         # Injeta o próprio GameController no BetsController
         self.bets_controller = BetsController(self)
@@ -166,12 +175,14 @@ class GameController:
         if j1.chips <= 0 or j2.chips <= 0:
             self.game_over = True
             self.tie = False
+            self.save_match_history()
             return
 
         # Regra 1: Fim ao término das rodadas configuradas
         if j1.number_rounds >= number_rounds and j2.number_rounds >= number_rounds:
             self.game_over = True
             self.tie = (j1.chips == j2.chips)
+            self.save_match_history()
 
     def show_winner(self):
         font = pygame.font.SysFont(None, 60)
@@ -197,3 +208,31 @@ class GameController:
         option_sair = font_options.render("Pressione S para sair", True, RED)
         self.screen.blit(option_reiniciar, (WIDTH // 2 - option_reiniciar.get_width() // 2, HEIGHT // 2 + 50))
         self.screen.blit(option_sair, (WIDTH // 2 - option_sair.get_width() // 2, HEIGHT // 2 + 100))
+        
+    def save_match_history(self):
+        folder_name = "data"
+        file_path = os.path.join(folder_name, "match_history.txt")
+
+        # Verifica se a pasta existe, se não, cria ela
+        if not os.path.exists(folder_name):
+            os.makedirs(folder_name)
+
+        # Prepara os dados para o log
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        p1, p2 = self.players[0], self.players[1]
+        
+        if self.tie:
+            result = "Empate"
+        else:
+            winner = p1 if p1.chips > p2.chips else p2
+            result = f"Vencedor: {winner.name}"
+
+        log_entry = f"Partida ocorrida em [{timestamp}]: {p1.name} ({p1.chips} fichas) vs {p2.name} ({p2.chips} fichas) | {result}\n"
+        
+        try:
+            # Agora abre o arquivo usando o caminho completo (data/match_history.txt)
+            with open(file_path, "a", encoding="utf-8") as file:
+                file.write(log_entry)
+            print(f"Histórico de partidas salvo em {file_path}")
+        except Exception as e:
+            print(f"Erro ao salvar histórico: {e}")
