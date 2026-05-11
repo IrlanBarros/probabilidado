@@ -20,7 +20,7 @@ class BetsController:
         house_board, number_col, number_line = click_result
         bet = self.bet_input()
         player = self.game.players[self.game.current_player]
-        print(f"número de chips: {player.chips}")
+        # print(f"número de chips: {player.chips}")
 
         if player.chips < bet or bet <= 0:
             self.game.game_message = f"{player.name} não tem {bet} fichas para apostar."

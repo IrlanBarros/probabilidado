@@ -15,6 +15,7 @@ pip-delete-this-directory.txt
 .idea/
 *.swp
 *.swo
+data/*.txt
 
 # Arquivos do Sistema Operacional
 .DS_Store

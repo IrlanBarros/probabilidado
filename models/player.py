@@ -12,7 +12,7 @@ class Player:
         self.number_rounds = 0
 
     def place_bet(self, type, amount):
-        print(f"bet de {amount} chips")
+        # print(f"bet de {amount} chips")
         self.chips -= amount
         self.bets[type] += amount
         self.number_rounds += 1
@@ -28,4 +28,4 @@ class Player:
 
     def earn_chips(self, gain, bet):
         self.chips = self.chips + gain + bet
-        print(f"{self.name} Ganhou {gain} chips. chips atuais: {self.chips}")
+        # print(f"{self.name} Ganhou {gain} chips. chips atuais: {self.chips}")

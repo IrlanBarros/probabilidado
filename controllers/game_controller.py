@@ -233,6 +233,6 @@ class GameController:
             # Agora abre o arquivo usando o caminho completo (data/match_history.txt)
             with open(file_path, "a", encoding="utf-8") as file:
                 file.write(log_entry)
-            print(f"Histórico de partidas salvo em {file_path}")
+            # print(f"Histórico de partidas salvo em {file_path}")
         except Exception as e:
             print(f"Erro ao salvar histórico: {e}")
