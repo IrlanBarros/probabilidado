@@ -5,6 +5,9 @@
 ## 📝 Sobre o Projeto
 O jogo desafia dois jogadores a apostarem suas fichas em resultados de lançamentos de dados. Os jogadores podem apostar em cores, quadrantes específicos ou até no par ordenado exato resultante do lançamento. O objetivo é terminar as 5 rodadas com o maior número de fichas ou levar o oponente à falência.
 
+## 📸 Interface do Jogo
+![Tela principal do Probabilidado](assets/images/probabilidado.png)
+
 ## 🚀 Funcionalidades
 - **Sistema de Apostas Variado:** Apostas em Quadrantes (3x), Cores (1x a 4x) ou Par Ordenado Exato (5x).
 - **Gerenciamento de Estado:** Controle automático de turnos, rodadas e saldo de fichas.
