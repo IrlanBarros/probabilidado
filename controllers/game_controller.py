@@ -163,7 +163,7 @@ class GameController:
             font_chips = pygame.font.SysFont('segoeui', 28)
             
             text_name = font_name.render(player.name, True, theme_color)
-            text_chips = font_chips.render(f"{player.chips} chips", True, TEXT_COLOR)
+            text_chips = font_chips.render(f"{player.chips} fichas", True, TEXT_COLOR)
             
             self.screen.blit(text_name, (card_rect.x + 15, card_rect.y + 15))
             self.screen.blit(text_chips, (card_rect.right - text_chips.get_width() - 15, card_rect.y + 15))
