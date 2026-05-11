@@ -84,9 +84,9 @@ class Scene:
                 
                 text = ""
                 if house_board == 4: text = f"Quad {number_line + 1}"
-                elif house_board == 5: text = "blue"
-                elif house_board == 6: text = "red"
-                elif house_board == 7: text = "green"
+                elif house_board == 5: text = "Azul"
+                elif house_board == 6: text = "Vermelho"
+                elif house_board == 7: text = "Verde"
                 
                 text_render = font.render(text, True, text_color)
                 screen.blit(text_render, (x + 15, y + self.size // 2 - 15))
