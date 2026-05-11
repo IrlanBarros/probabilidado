@@ -9,7 +9,8 @@ O jogo desafia dois jogadores a apostarem suas fichas em resultados de lançamen
 - **Sistema de Apostas Variado:** Apostas em Quadrantes (3x), Cores (1x a 4x) ou Par Ordenado Exato (5x).
 - **Gerenciamento de Estado:** Controle automático de turnos, rodadas e saldo de fichas.
 - **Interface Moderna (Dashboard):** Painel lateral organizado com informações em tempo real, cards de status e efeitos de sombra/arredondamento.
-- **Feedback Sonoro:** Efeitos sonoros para lançamentos de dados, vitórias e erros.
+- **Áudio e Imersão:** Música ambiente de fundo contínua e efeitos sonoros responsivos para lançamentos de dados, vitórias e erros.
+- **Histórico de Partidas (Log):** Salvamento automático dos resultados finais (data, placar e vencedor) em um arquivo `.txt` persistente.
 - **Validações:** Limites de caracteres para nomes (12) e apostas (3 dígitos), além de verificação de saldo.
 - **Morte Súbita:** O jogo termina imediatamente se um jogador ficar sem fichas.
 
@@ -30,7 +31,8 @@ O projeto segue uma estrutura organizada para facilitar a manutenção:
 - **models/**
   - `player.py`: Entidade que representa o jogador e seu saldo.
   - `scene.py`: Responsável pela renderização do tabuleiro e detecção de cliques.
-- **assets/sounds/**: Arquivos de áudio `.wav`.
+- **assets/**: Contém os recursos de mídia do jogo (`sounds/` para efeitos curtos e `music/` para trilha de fundo).
+- **data/**: Diretório gerado automaticamente para armazenar o arquivo de histórico (`match_history.txt`).
 
 ## 🎮 Como Jogar
 1. **Instalação:** Certifique-se de ter o Python e o Pygame instalados (`pip install pygame`).
